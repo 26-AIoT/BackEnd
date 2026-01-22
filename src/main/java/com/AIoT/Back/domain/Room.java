@@ -1,4 +1,4 @@
-package com.AIoT.Back.rooms;
+package com.AIoT.Back.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

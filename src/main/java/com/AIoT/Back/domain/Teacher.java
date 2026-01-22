@@ -1,6 +1,6 @@
-package com.AIoT.Back.teacher.entity;
+package com.AIoT.Back.domain;
 
-import com.AIoT.Back.global.entity.BaseTimeEntity;
+import com.AIoT.Back.utils.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TeacherUser extends BaseTimeEntity {
+public class Teacher extends BaseTimeEntity {
 
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

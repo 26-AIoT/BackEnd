@@ -1,4 +1,4 @@
-package com.AIoT.Back.global.error;
+package com.AIoT.Back.utils;
 
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;

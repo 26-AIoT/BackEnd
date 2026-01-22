@@ -1,4 +1,4 @@
-package com.AIoT.Back.teacher.dto;
+package com.AIoT.Back.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-public class TeacherDtos {
+public class LoginReq {
 
     @Getter
     @Setter

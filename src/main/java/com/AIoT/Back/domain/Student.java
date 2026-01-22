@@ -1,6 +1,5 @@
-package com.AIoT.Back.student.entity;
+package com.AIoT.Back.domain;
 
-import com.AIoT.Back.rooms.Room;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StudentUser {
+public class Student {
 
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -1,4 +1,4 @@
-package com.AIoT.Back.global.entity;
+package com.AIoT.Back.utils;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;

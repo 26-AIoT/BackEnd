@@ -1,4 +1,4 @@
-package com.AIoT.Back.global.error;
+package com.AIoT.Back.utils;
 
 import lombok.*;
 

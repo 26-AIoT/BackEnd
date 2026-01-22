@@ -1,7 +1,7 @@
-package com.AIoT.Back.teacher.controller;
+package com.AIoT.Back.controller;
 
-import com.AIoT.Back.teacher.dto.TeacherDtos;
-import com.AIoT.Back.teacher.service.TeacherService;
+import com.AIoT.Back.dto.request.LoginReq;
+import com.AIoT.Back.service.TeacherService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +19,13 @@ public class TeacherController {
     private final TeacherService teacherService;
 
     @PostMapping("/auth/join")
-    public ResponseEntity<String> Join(@RequestBody TeacherDtos.RequestJoin req) {
+    public ResponseEntity<String> Join(@RequestBody LoginReq.RequestJoin req) {
         teacherService.join(req);
         return ResponseEntity.ok("회원가입이 완료되었습니다.");
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<String> login(@RequestBody TeacherDtos.RequestLogin req, HttpServletRequest httpreq) {
+    public ResponseEntity<String> login(@RequestBody LoginReq.RequestLogin req, HttpServletRequest httpreq) {
 
         // 1. 서비스에서 ID/PW 검증 (실패 시 예외 발생)
         // 로그인 성공 시 선생님의 ID(PK)를 반환받음
