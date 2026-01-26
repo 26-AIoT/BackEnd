@@ -31,7 +31,4 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)); // 세션 방식 사용시
         return http.build();
     }
-
-
-
 }
