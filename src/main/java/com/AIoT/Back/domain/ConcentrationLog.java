@@ -26,15 +26,12 @@ public class ConcentrationLog {
 
     private Double score; // 집중도 점수
 
-    private Integer eyeStatus; // 0: 뜸, 1: 감음
-
     private LocalDateTime timestamp;
 
-    public ConcentrationLog(Room room, Student student, Double score, Integer eyeStatus) {
+    public ConcentrationLog(Room room, Student student, Double score) {
         this.room = room;
         this.student = student;
         this.score = score;
-        this.eyeStatus = eyeStatus;
         this.timestamp = LocalDateTime.now();
     }
 }
