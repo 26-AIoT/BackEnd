@@ -1,7 +1,9 @@
 package com.AIoT.Back.controller;
 
 import com.AIoT.Back.domain.Teacher;
+import com.AIoT.Back.dto.request.DashboardDtos;
 import com.AIoT.Back.dto.request.RoomDtos;
+import com.AIoT.Back.dto.request.StudentDtos;
 import com.AIoT.Back.dto.request.TeacherDtos;
 import com.AIoT.Back.service.TeacherService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -81,5 +83,44 @@ public class TeacherController {
         List<RoomDtos.RoomResponse> rooms = teacherService.getMyRooms(teacherId);
 
         return ResponseEntity.ok(rooms);
+    }
+
+    // 학생 상세 기록 조회
+    @GetMapping("/room/{roomId}/student/{studentId}")
+    public ResponseEntity<Map<String, Object>> getStudentDetail(
+            @PathVariable Long roomId,
+            @PathVariable Long studentId,
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId) { // ★ 추가됨
+
+        if (teacherId == null) return ResponseEntity.status(401).build(); // ★ 추가됨
+
+        Map<String, Object> history = teacherService.getStudentHistory(roomId, studentId);
+        return ResponseEntity.ok(history);
+    }
+
+    // 대시보드 데이터 조회 API
+    // 프론트엔드에서 1초~3초마다 이 주소를 호출해서 화면을 갱신함
+    @GetMapping("/room/{roomId}/dashboard")
+    public ResponseEntity<List<DashboardDtos.StudentStatus>> getDashboard(
+            @PathVariable Long roomId,
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId) { // ★ 추가됨
+
+        if (teacherId == null) return ResponseEntity.status(401).build(); // ★ 추가됨
+
+        List<DashboardDtos.StudentStatus> statusList = teacherService.getRoomDashboard(roomId);
+        return ResponseEntity.ok(statusList);
+    }
+
+    // ★ [추가] 반별 학생 명단 조회 (오른쪽 사이드바용 - 아까 빠진 거!)
+    // DTO 이름이 StudentDtos.Response라고 가정할게 (없으면 만들어야 해)
+    @GetMapping("/room/{roomId}/students")
+    public ResponseEntity<List<StudentDtos.Response>> getStudentList(
+            @PathVariable Long roomId,
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId) {
+
+        if (teacherId == null) return ResponseEntity.status(401).build();
+
+        List<StudentDtos.Response> students = teacherService.getStudentList(roomId);
+        return ResponseEntity.ok(students);
     }
 }

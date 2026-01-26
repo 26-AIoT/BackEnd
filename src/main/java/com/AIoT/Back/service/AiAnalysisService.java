@@ -47,7 +47,10 @@ public class AiAnalysisService {
         }
 
         // 출석 체크 (오늘 첫 기록이면 출석 처리)
-        if (attendanceRepository.existsByRoomAndStudentAndAttendanceDate(room, student, LocalDate.now())) {
+        boolean isAttended = attendanceRepository.existsByRoomAndStudentAndAttendanceDate(
+                room, student, LocalDate.now());
+
+        if (!isAttended) {
             Attendance attendance = new Attendance(room, student, AttendanceStatus.PRESENT);
             attendanceRepository.save(attendance);
             System.out.println("출석 인정 완료: " + student.getName());
