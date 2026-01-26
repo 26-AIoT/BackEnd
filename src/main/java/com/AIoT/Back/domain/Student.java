@@ -1,32 +1,40 @@
 package com.AIoT.Back.domain;
 
+import com.AIoT.Back.domain.converter.FaceVectorConverter;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "Student")
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Student {
 
-    @Id@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "student_id")
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    private Room room;
 
     @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
-    private String number;
+    private String studentNumber; // 학번
 
-    @Column(nullable = false)
-    private String sessionId; // 소켓 연결 끊김 감지용
+    // ★ 핵심: 512차원 벡터를 JSON String으로 변환하여 저장
+    @Convert(converter = FaceVectorConverter.class)
+    @Column(columnDefinition = "json") // MySQL JSON 타입 사용
+    private List<Double> faceVector;
 
-    @Column(nullable = false)
-    private String isAttended; // 출석인정여부
+    // 학생이 듣는 수업 목록
+    @OneToMany(mappedBy = "student")
+    private List<Enrollment> enrollments = new ArrayList<>();
+
+    public Student(String name, String studentNumber, List<Double> faceVector) {
+        this.name = name;
+        this.studentNumber = studentNumber;
+        this.faceVector = faceVector;
+    }
 }
