@@ -1,0 +1,13 @@
+package com.AIoT.Back.repository;
+
+import com.AIoT.Back.domain.Teacher;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface TeacherRepository extends JpaRepository<Teacher, Long> {
+    Optional<Teacher> findByEmail(String email);
+
+    // 이메일 중복 여부 확인
+    boolean existsByEmail(String email);
+}
