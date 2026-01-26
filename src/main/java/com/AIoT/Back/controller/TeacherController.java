@@ -1,6 +1,7 @@
 package com.AIoT.Back.controller;
 
 import com.AIoT.Back.domain.Teacher;
+import com.AIoT.Back.dto.request.RoomDtos;
 import com.AIoT.Back.dto.request.TeacherDtos;
 import com.AIoT.Back.service.TeacherService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -66,5 +68,18 @@ public class TeacherController {
         response.put("roomCode", roomCode); // 학생들에게 공유할 코드
 
         return ResponseEntity.ok(response);
+    }
+    // 첫화면에서 방목록 찾기
+    @GetMapping("/rooms")
+    public ResponseEntity<List<RoomDtos.RoomResponse>> getMyRooms (
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId
+    ) {
+        if (teacherId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<RoomDtos.RoomResponse> rooms = teacherService.getMyRooms(teacherId);
+
+        return ResponseEntity.ok(rooms);
     }
 }

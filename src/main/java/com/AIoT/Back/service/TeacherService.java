@@ -2,6 +2,7 @@ package com.AIoT.Back.service;
 
 import com.AIoT.Back.domain.Room;
 import com.AIoT.Back.domain.Teacher;
+import com.AIoT.Back.dto.request.RoomDtos;
 import com.AIoT.Back.dto.request.TeacherDtos;
 import com.AIoT.Back.repository.RoomRepository;
 import com.AIoT.Back.repository.TeacherRepository;
@@ -9,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,5 +59,16 @@ public class TeacherService {
         roomRepository.save(room);
 
         return roomCode; // 프론트에 방 코드를 리턴해줘야 학생들에게 공유 가능
+    }
+
+    // 선생님의 방 목록 조회
+    public List<RoomDtos.RoomResponse> getMyRooms(Long teacherId) {
+        // DB에서 선생님 ID로 방 리스트 조회
+        List<Room> rooms = roomRepository.findAllByTeacherIdOrderByIdDesc(teacherId);
+
+        // Room 엔티티 리스트 -> RoomResponse DTO 리스트로 변환
+        return rooms.stream()
+                .map(RoomDtos.RoomResponse::new)
+                .collect(Collectors.toList());
     }
 }
