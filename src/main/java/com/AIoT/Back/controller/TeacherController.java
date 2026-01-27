@@ -111,7 +111,7 @@ public class TeacherController {
         return ResponseEntity.ok(statusList);
     }
 
-    // ★ [추가] 반별 학생 명단 조회 (오른쪽 사이드바용 - 아까 빠진 거!)
+    // 반별 학생 명단 조회 (오른쪽 사이드바용 - 아까 빠진 거!)
     // DTO 이름이 StudentDtos.Response라고 가정할게 (없으면 만들어야 해)
     @GetMapping("/room/{roomId}/students")
     public ResponseEntity<List<StudentDtos.Response>> getStudentList(
