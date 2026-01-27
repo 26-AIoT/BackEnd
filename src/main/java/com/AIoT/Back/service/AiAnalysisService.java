@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +20,7 @@ public class AiAnalysisService {
     private final RoomRepository roomRepository;
     private final AttendanceRepository attendanceRepository;
     private final ConcentrationLogRepository concentrationLogRepository;
-    private final EnrollmentRepository enrollmentRepository;
+    // enrollmentRepository는 이제 조회용으로는 안쓰고 studentRepository 쿼리로 대체함
 
     public void processAiData(AiDtos data) {
         // 방 찾기 (roomCode로)
@@ -33,17 +32,20 @@ public class AiAnalysisService {
             return;
         }
 
-        // 학생 식별
-        Student student = findStudentByVector(data.getVector());
-        if (student == null) {
-            System.out.println("등록되지 않은 학생 얼굴 감지됨");
+        //  전교생이 아니라, "이 방에 등록된 학생들"만 가져오기
+        List<Student> classStudents = studentRepository.findStudentsByRoomId(room.getId());
+
+        if (classStudents.isEmpty()) {
+            System.out.println("이 방에 등록된 학생이 한 명도 없습니다.");
             return;
         }
-        // 이거는 추후에 확장가능성 (현재는 그냥 DB에 우리정보만 넣는걸로!)
-        if (!enrollmentRepository.existsByRoomAndStudent(room, student)) {
-            Enrollment enrollment = Enrollment.createEnrollment(student, room);
-            enrollmentRepository.save(enrollment);
-            System.out.println("새 수강생 자동 등록: " + student.getName());
+
+        // 3. 가져온 "우리 반 학생들" 중에서만 얼굴 비교
+        Student student = findStudentByVector(data.getVector(), classStudents);
+
+        if (student == null) {
+            System.out.println("⚠️ 우리 반 학생이 아닙니다. (유사도 낮음)");
+            return;
         }
 
         // 출석 체크 (오늘 첫 기록이면 출석 처리)
@@ -64,13 +66,12 @@ public class AiAnalysisService {
 
     }
     // 벡터 유사도로 학생 찾기
-    private Student findStudentByVector(List<Double> inputVector) {
-        List<Student> allStudents = studentRepository.findAll();
+    private Student findStudentByVector(List<Double> inputVector, List<Student> classStudents) {
         Student bestMatch = null;
         double maxSimilarity = 0.0;
 
-        for (Student s : allStudents) {
-            // DB에 저장된 벡터 꺼내기 (Converter가 자동으로 List<Double>로 바꿔줌)
+        // 전달받은 "우리 반 학생들"만 반복문 돌림
+        for (Student s : classStudents) {
             List<Double> dbVector = s.getFaceVector();
 
             if (dbVector == null || dbVector.isEmpty()) continue;

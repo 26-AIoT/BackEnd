@@ -7,6 +7,14 @@ import lombok.NoArgsConstructor;
 
 public class RoomDtos {
 
+    // 데이터를 받는 그릇 (이게 없어서 에러)
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RoomPostRequest {
+        private String roomTitle; // 프론트엔드의 'roomName'과 철자가 똑같아야 함!
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
