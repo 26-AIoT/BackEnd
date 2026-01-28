@@ -109,21 +109,17 @@ public class TeacherService {
             // 상태 메시지 결정
             String message = "미출석";
 
-            // 로그가 하나라도 있으면 -> 사실상 출석한 거임! (강제로 true 처리)
-            if (!recentLogs.isEmpty()) {
-                isPresent = true;
-            }
-
             if (isPresent) {
                 if (recentLogs.isEmpty()) {
-                    // 출석부엔 있는데 로그가 없는 경우
-                    message = "출석완료";
+                    // 출석은 했는데 최근 5분간 로그가 없음 -> "자리비움" (얼굴 인식 실패)
+                    message = "자리비움";
                 } else {
-                    // 로그 분석
-                    boolean isAway = recentLogs.stream().allMatch(log -> log.getScore() == 0.0);
+                    // 로그가 있는 경우 (정상 감지 중)
+                    // 점수가 0점인 데이터가 들어온 경우도 처리 (눈 감음, 고개 돌림 등)
+                    boolean isLookingAway = recentLogs.stream().anyMatch(log -> log.getScore() == 0.0);
 
-                    if (isAway) message = "자리비움";
-                    else if (currentScore < 50.0) message = "집중력 저하";
+                    if (isLookingAway && currentScore == 0.0) message = "자세 불량"; // 혹은 "딴짓 중"
+                    else if (currentScore < 0.4) message = "집중력 저하";
                     else message = "집중 중";
                 }
             }
@@ -168,10 +164,14 @@ public class TeacherService {
                     .average()
                     .orElse(0.0);
 
+        // 3. 소수점 둘째 자리까지 반올림 (예: 0.8555 -> 0.86)
+        // 기존 코드(recentAvg / 10.0)는 삭제하고, 정확한 반올림 로직 적용
+        double roundedAvg = Math.round(recentAvg * 100) / 100.0;
+
         // 결과 맵핑
         Map<String, Object> response = new HashMap<>();
         response.put("studentName", student.getName());
-        response.put("recentAverage", Math.round(recentAvg * 10) / 10.0); // 소수점 첫째자리 반올림
+        response.put("recentAverage", roundedAvg);
         response.put("history", historyList);
 
         return response;
@@ -179,20 +179,21 @@ public class TeacherService {
 
     // 반별 학생 명단 조회 (관리 페이지용)
     @Transactional(readOnly = true)
-    public List<StudentDtos.Response> getStudentList(Long roomId) {
+    public List<StudentDtos.Response> getStudentsInRoom(Long roomId) {
+        // 1. 방 코드가 아니라 '방 ID'로 찾기
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
 
-        // 이 방에 수강신청한 내역(Enrollment)을 다 가져옴
-        List<Enrollment> enrollments = enrollmentRepository.findAllByRoom(room);
+        // 2. 학생 목록 가져오기 (이건 그대로)
+        List<Student> students = studentRepository.findStudentsByRoomId(roomId);
 
-        // Enrollment -> Student -> DTO 변환
-        return enrollments.stream()
-                .map(enrollment -> {
-                    Student s = enrollment.getStudent();
-                    // StudentDtos.Response가 (id, name, studentNumber)를 받는다고 가정
-                    return new StudentDtos.Response(s.getId(), s.getName(), s.getStudentNumber());
-                })
+        // 3. 변환 및 반환 (그대로)
+        return students.stream()
+                .map(s -> new StudentDtos.Response(
+                        s.getId(),
+                        s.getName(),
+                        s.getStudentNumber()
+                ))
                 .collect(Collectors.toList());
     }
 }

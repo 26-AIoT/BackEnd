@@ -8,9 +8,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // 모든 주소 허용
-                .allowedOriginPatterns("*") // 모든 출처 허용
-                .allowedMethods("GET", "POST", "PUT", "DELETE")
-                .allowCredentials(true);
+        registry.addMapping("/**")
+                // 친구 주소를 명시적으로 입력! (배열로 여러 개 가능)
+                .allowedOrigins("http://localhost:5175")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true); // 쿠키 허용
     }
 }

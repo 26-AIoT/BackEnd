@@ -71,6 +71,7 @@ public class TeacherController {
 
         return ResponseEntity.ok(response);
     }
+
     // 첫화면에서 방목록 찾기
     @GetMapping("/rooms")
     public ResponseEntity<List<RoomDtos.RoomResponse>> getMyRooms (
@@ -111,16 +112,14 @@ public class TeacherController {
         return ResponseEntity.ok(statusList);
     }
 
-    // ★ [추가] 반별 학생 명단 조회 (오른쪽 사이드바용 - 아까 빠진 거!)
+    // 반별 학생 명단 조회 (오른쪽 사이드바용 - 아까 빠진 거!)
     // DTO 이름이 StudentDtos.Response라고 가정할게 (없으면 만들어야 해)
     @GetMapping("/room/{roomId}/students")
-    public ResponseEntity<List<StudentDtos.Response>> getStudentList(
-            @PathVariable Long roomId,
-            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId) {
-
-        if (teacherId == null) return ResponseEntity.status(401).build();
-
-        List<StudentDtos.Response> students = teacherService.getStudentList(roomId);
+    public ResponseEntity<List<StudentDtos.Response>> getStudentsInRoom(
+            @PathVariable("roomId") Long roomId
+    ) {
+        // 서비스에도 roomId를 넘김
+        List<StudentDtos.Response> students = teacherService.getStudentsInRoom(roomId);
         return ResponseEntity.ok(students);
     }
 }
