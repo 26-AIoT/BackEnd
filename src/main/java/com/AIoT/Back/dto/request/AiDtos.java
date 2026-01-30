@@ -1,13 +1,15 @@
 package com.AIoT.Back.dto.request;
 
-import lombok.Data;
+import lombok.*;
 
 import java.util.List;
 
 //AI가 보낼 데이터를 받을 그릇
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AiDtos {
-    private String roomCode;
-    private List<Double> vector; // 512
-    private Double score; // 집중도
+    // AI가 보낸 512차원 벡터 데이터
+    private List<Double> vector;
 }

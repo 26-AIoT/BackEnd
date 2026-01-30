@@ -39,4 +39,8 @@ public class Attendance {
         this.attendanceDate = LocalDate.now();
         this.createdAt = LocalDateTime.now();
     }
+
+    public static Attendance createAttendance(Student student, Room room) {
+        return new Attendance(room, student, AttendanceStatus.PRESENT); // 기본값: 출석(PRESENT)
+    }
 }

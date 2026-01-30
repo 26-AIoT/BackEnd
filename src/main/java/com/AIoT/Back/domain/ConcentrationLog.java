@@ -1,8 +1,10 @@
 package com.AIoT.Back.domain;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 
@@ -28,10 +30,11 @@ public class ConcentrationLog {
 
     private LocalDateTime timestamp;
 
-    public ConcentrationLog(Room room, Student student, Double score) {
+    @Builder
+    public ConcentrationLog(Room room, Student student, Double score, LocalDateTime timestamp) {
         this.room = room;
         this.student = student;
         this.score = score;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
     }
 }
