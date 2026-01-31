@@ -20,7 +20,7 @@ public class Student {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String studentNumber; // 학번
 
     // ★ 핵심: 512차원 벡터를 JSON String으로 변환하여 저장

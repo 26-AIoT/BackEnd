@@ -1,34 +1,48 @@
 package com.AIoT.Back.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
+
 public class MobiusDtos {
-    // Mobius가 보내주는 전체 알림 구조 (oneM2M 표준)
+
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Notification {
         @JsonProperty("m2m:sgn")
-        private Sgn sgn;
+        private Sgn m2mSgn;
     }
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Sgn {
         private Nev nev;
     }
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Nev {
         private Rep rep;
     }
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Rep {
         @JsonProperty("m2m:cin")
-        private Cin cin;
+        private M2mCin m2mCin;
     }
 
     @Data
-    public static class Cin {
-        private String con; // 여기가 진짜 데이터 (JSON String) 들어있는 곳!
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class M2mCin {
+        private Content con;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Content {
+        private List<Double> vec;
     }
 }
