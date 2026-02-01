@@ -87,18 +87,24 @@ public class TeacherService {
         List<Enrollment> enrollments = enrollmentRepository.findAllByRoom(room);
         List<DashboardDtos.StudentStatus> dashboardList = new ArrayList<>();
 
-        // 1. DB 조회용 범위 (최근 1분 데이터 가져오기 - 넉넉하게)
+        // 1. DB 조회용 범위 (최근 1분 데이터 가져오기)
         LocalDateTime fetchRange = LocalDateTime.now().minusMinutes(1);
 
-        // 2. ★ [핵심] "자리비움" 판단 기준 시간 (현재로부터 10초 전)
+        // 2. "자리비움" 판단 기준 (10초 전)
         LocalDateTime tenSecondsAgo = LocalDateTime.now().minusSeconds(10);
 
         for (Enrollment enrollment : enrollments) {
             Student student = enrollment.getStudent();
 
-            // 출석부 확인
-            boolean isPresent = attendanceRepository.existsByRoomAndStudentAndAttendanceDate(
-                    room, student, LocalDate.now());
+            // ★ [수정] 날짜 기준(LocalDate) -> 수업 시작 시간 기준(startedAt)으로 변경
+            boolean isPresent = false;
+
+            // 수업이 시작된 상태(null이 아님)라면, 시작 시간 이후의 기록을 조회
+            if (room.getStartedAt() != null) {
+                isPresent = attendanceRepository.existsByRoomAndStudentAndCreatedAtAfter(
+                        room, student, room.getStartedAt());
+            }
+            // 수업이 시작 안 됐으면(null이면) 무조건 false(미출석) 처리
 
             // 최근 로그 가져오기
             List<ConcentrationLog> recentLogs = concentrationLogRepository
@@ -111,20 +117,26 @@ public class TeacherService {
             // 상태 메시지 결정
             String message = "미출석";
 
+            // 출석한 상태일 때만 상태 메시지 세분화
             if (isPresent) {
-                // ★ [핵심 로직 수정]
-                // 로그가 아예 없거나 OR 마지막 로그 시간이 10초보다 더 이전이라면 -> "자리비움"
+                // 로그가 아예 없거나 마지막 로그가 10초 전이라면 -> "자리비움"
                 boolean isLogOld = (lastLog == null) || lastLog.getTimestamp().isBefore(tenSecondsAgo);
 
                 if (isLogOld) {
-                    message = "자리비움"; // 10초간 데이터 끊김
+                    message = "자리비움";
                 } else {
-                    // 10초 이내에 데이터가 들어온 경우 (연결됨)
+                    // 10초 이내에 데이터가 들어온 경우
                     boolean isLookingAway = recentLogs.stream().anyMatch(log -> log.getScore() == 0.0);
 
                     if (isLookingAway && currentScore == 0.0) message = "자세 불량";
                     else if (currentScore < 0.4) message = "집중력 저하";
                     else message = "집중 중";
+                }
+            } else {
+                // (선택) 수업 중인데 아직 안 왔으면 "결석"이나 "미출석" 유지
+                // 만약 수업 시작 전이면 "대기 중" 등으로 표시하고 싶다면 여기서 분기 처리 가능
+                if (room.getStartedAt() == null) {
+                    message = "수업 대기";
                 }
             }
 

@@ -123,19 +123,22 @@ public class AiAnalysisService {
             }
         }
 
-        // 진행 중인 수업이 없으면 로그 버림
-        if (activeRoom == null) {
-            System.out.println("⚠️ [" + matchedStudent.getName() + "] 학생은 식별됐지만, 현재 진행 중인 수업이 없습니다. 데이터 무시.");
-            return;
-        }
+        if (activeRoom == null) return; // 수업 중 아니면 무시
 
-        // 5. [수정] 출석 처리 (activeRoom 사용)
-        boolean isPresent = attendanceRepository.existsByRoomAndStudentAndAttendanceDate(
-                activeRoom, matchedStudent, LocalDate.now()); // activeRoom 변수 사용
+        // ★ [핵심 수정] 출석 확인 로직 변경
+        // "이 수업이 시작된 시간(activeRoom.getStartedAt()) 이후에 출석 기록이 있는가?"
+        boolean isAlreadyCheckedIn = attendanceRepository.existsByRoomAndStudentAndCreatedAtAfter(
+                activeRoom, matchedStudent, activeRoom.getStartedAt());
 
-        if (!isPresent) {
-            attendanceRepository.save(new Attendance(activeRoom, matchedStudent, AttendanceStatus.PRESENT));
-            System.out.println("✅ [" + matchedStudent.getName() + "] 출석 처리 완료 (방: " + activeRoom.getRoomName() + ")");
+        if (!isAlreadyCheckedIn) {
+            // 기록이 없다면 -> 이번 수업의 첫 등장이므로 '출석' 저장
+            Attendance newAttendance = new Attendance(activeRoom, matchedStudent, AttendanceStatus.PRESENT);
+            attendanceRepository.save(newAttendance);
+
+            System.out.println("✅ [" + activeRoom.getRoomName() + "] 수업 출석 인정: " + matchedStudent.getName());
+        } else {
+            // 이미 이번 수업 시간에 기록이 있다면 -> 중복 저장 안 함 (로그만 남김)
+             System.out.println("ℹ️ 이미 출석 처리된 학생입니다.");
         }
 
         // 6. [수정] 집중도 로그 저장 (activeRoom 사용)
