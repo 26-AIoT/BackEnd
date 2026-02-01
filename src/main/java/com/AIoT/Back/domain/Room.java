@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,8 @@ public class Room {
     @Column(nullable = false, unique = true)
     private String roomCode; // 학생 접속용 난수 코드
 
+    private LocalDateTime startedAt;
+
     // 방 주인 (선생님)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
@@ -35,5 +38,19 @@ public class Room {
         this.roomName = roomName;
         this.roomCode = roomCode;
         this.teacher = teacher;
+    }
+
+    // ★ [추가] 수업 시작/종료 메서드 (비즈니스 로직)
+    public void startClass() {
+        this.startedAt = LocalDateTime.now();
+    }
+
+    public void endClass() {
+        this.startedAt = null;
+    }
+
+    // ★ [추가] 현재 수업 중인지 확인
+    public boolean isClassRunning() {
+        return this.startedAt != null;
     }
 }

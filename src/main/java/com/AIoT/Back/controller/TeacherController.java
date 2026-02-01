@@ -137,4 +137,29 @@ public class TeacherController {
         aiAnalysisService.triggerVerification(studentId);
         return ResponseEntity.ok("본인 확인 요청됨. 다음 데이터 패킷에서 검사합니다.");
     }
+
+    // ★ [추가] 수업 시작 API
+    @PostMapping("/room/{roomId}/start")
+    public ResponseEntity<String> startClass(
+            @PathVariable Long roomId,
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId
+    ) {
+        if (teacherId == null) return ResponseEntity.status(401).body("로그인 필요");
+
+        // (선택) 본인 방인지 확인하는 로직 추가 가능
+
+        teacherService.startClass(roomId);
+        return ResponseEntity.ok("수업이 시작되었습니다.");
+    }
+
+    // ★ [추가] 수업 종료 API
+    @PostMapping("/room/{roomId}/end")
+    public ResponseEntity<String> endClass(
+            @PathVariable Long roomId,
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId
+    ) {
+        if (teacherId == null) return ResponseEntity.status(401).body("로그인 필요");
+        teacherService.endClass(roomId);
+        return ResponseEntity.ok("수업이 종료되었습니다.");
+    }
 }

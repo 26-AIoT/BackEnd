@@ -106,33 +106,43 @@ public class AiAnalysisService {
         }
 
         if (matchedStudent == null) {
-            System.out.println("일치하는 학생을 찾을 수 없습니다. (유사도 0.7 미만)");
+            System.out.println("일치하는 학생을 찾을 수 없습니다.");
             return;
         }
 
-        // 4. 수강 중인 방(수업) 찾기
+        // 4. [수정] 현재 "진행 중(Started)"인 수업 찾기
         List<Enrollment> enrollments = enrollmentRepository.findAllByStudent(matchedStudent);
-        if (enrollments.isEmpty()) {
-            System.out.println("⚠️ 학생은 찾았으나, 수강신청된 수업이 없습니다: " + matchedStudent.getName());
+        Room activeRoom = null;
+
+        for (Enrollment enrollment : enrollments) {
+            Room r = enrollment.getRoom();
+            // 방이 시작된 상태인지 확인 (isClassRunning 메서드 활용)
+            if (r.isClassRunning()) {
+                activeRoom = r;
+                break;
+            }
+        }
+
+        // 진행 중인 수업이 없으면 로그 버림
+        if (activeRoom == null) {
+            System.out.println("⚠️ [" + matchedStudent.getName() + "] 학생은 식별됐지만, 현재 진행 중인 수업이 없습니다. 데이터 무시.");
             return;
         }
 
-        // ★ 현재는 '첫 번째' 수업으로 가정 (추후 시간표 로직이 필요할 수 있음)
-        Room room = enrollments.get(0).getRoom();
-
-        // 5. 출석 처리
+        // 5. [수정] 출석 처리 (activeRoom 사용)
         boolean isPresent = attendanceRepository.existsByRoomAndStudentAndAttendanceDate(
-                room, matchedStudent, LocalDate.now());
+                activeRoom, matchedStudent, LocalDate.now()); // activeRoom 변수 사용
 
         if (!isPresent) {
-            attendanceRepository.save(new Attendance(room, matchedStudent, AttendanceStatus.PRESENT));
+            attendanceRepository.save(new Attendance(activeRoom, matchedStudent, AttendanceStatus.PRESENT));
+            System.out.println("✅ [" + matchedStudent.getName() + "] 출석 처리 완료 (방: " + activeRoom.getRoomName() + ")");
         }
 
-        // 6. 집중도 로그 저장 (점수 0.1 이하는 0 처리)
+        // 6. [수정] 집중도 로그 저장 (activeRoom 사용)
         double finalScore = (currentScore > 0.1) ? currentScore : 0.0;
 
         ConcentrationLog log = ConcentrationLog.builder()
-                .room(room)
+                .room(activeRoom) // activeRoom 변수 사용
                 .student(matchedStudent)
                 .score(finalScore)
                 .timestamp(LocalDateTime.now())

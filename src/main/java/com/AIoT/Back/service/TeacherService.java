@@ -200,4 +200,21 @@ public class TeacherService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void startClass(Long roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
+
+        // 방 상태를 '시작'으로 변경
+        room.startClass();
+    }
+
+    @Transactional
+    public void endClass(Long roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
+
+        room.endClass();
+    }
 }
