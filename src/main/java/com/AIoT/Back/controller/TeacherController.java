@@ -5,6 +5,7 @@ import com.AIoT.Back.dto.request.DashboardDtos;
 import com.AIoT.Back.dto.request.RoomDtos;
 import com.AIoT.Back.dto.request.StudentDtos;
 import com.AIoT.Back.dto.request.TeacherDtos;
+import com.AIoT.Back.service.AiAnalysisService;
 import com.AIoT.Back.service.TeacherService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class TeacherController {
 
     private final TeacherService teacherService;
+    private final AiAnalysisService aiAnalysisService;
 
     @PostMapping("/join")
     public ResponseEntity<String> signup(@RequestBody TeacherDtos.RequestJoin request) {
@@ -121,5 +123,18 @@ public class TeacherController {
         // 서비스에도 roomId를 넘김
         List<StudentDtos.Response> students = teacherService.getStudentsInRoom(roomId);
         return ResponseEntity.ok(students);
+    }
+
+    @PostMapping("/verify/{studentId}")
+    public ResponseEntity<String> requestVerification(
+            @PathVariable Long studentId,
+            @SessionAttribute(name = "TEACHER_ID", required = false) Long teacherId
+    ) {
+        if (teacherId == null) {
+            return ResponseEntity.status(401).body("로그인 필요");
+        }
+        // 서비스에 검사 요청
+        aiAnalysisService.triggerVerification(studentId);
+        return ResponseEntity.ok("본인 확인 요청됨. 다음 데이터 패킷에서 검사합니다.");
     }
 }

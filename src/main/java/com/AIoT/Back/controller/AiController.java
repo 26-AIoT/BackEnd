@@ -41,6 +41,7 @@ public class AiController {
             // 3. JSON 파싱
             JsonNode rootNode = objectMapper.readTree(trimmedJson);
             JsonNode vecNode = rootNode.findValue("vec");
+            JsonNode deviceNode = rootNode.findValue("device"); // ★ 추가: 라벨 값 찾기
 
             if (vecNode == null) {
                 System.out.println("⚠️ [Skip] 'vec' key not found in JSON");
@@ -55,22 +56,23 @@ public class AiController {
                 String vecString = vecNode.asText();
                 Double[] vectorArray = objectMapper.readValue(vecString, Double[].class);
                 vectorData = Arrays.asList(vectorArray);
-                System.out.println("✅ [Success] String-Type Vector Parsed");
-
             } else if (vecNode.isArray()) {
                 // Case B: 기존처럼 배열로 보낸 경우 (예: [0.1, 0.2, ...])
                 Double[] vectorArray = objectMapper.convertValue(vecNode, Double[].class);
                 vectorData = Arrays.asList(vectorArray);
-                System.out.println("✅ [Success] Array-Type Vector Parsed");
-
             } else {
                 System.out.println("❌ [Invalid Format] 'vec' is neither String nor Array. Type: " + vecNode.getNodeType());
                 return ResponseEntity.badRequest().body("Invalid format");
             }
 
-            // 4. 서비스 실행
-            AiDtos aiData = AiDtos.builder().vector(vectorData).build(); // Builder 패턴 활용
-            aiAnalysisService.processAiData(aiData);
+            // ★ [핵심 수정] 라벨 값 추출 (없으면 null)
+            String deviceId = (deviceNode != null && !deviceNode.isNull()) ? deviceNode.asText() : null;
+
+            // 4. 서비스 실행 (device 값 포함)
+            AiDtos aiData = AiDtos.builder()
+                    .vector(vectorData)
+                    .device(deviceId) // ★ DTO의 device 필드에 넣기
+                    .build();
 
             aiAnalysisService.processAiData(aiData);
 
