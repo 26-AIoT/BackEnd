@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TeacherService {
-
     private final TeacherRepository teacherRepository;
     private final RoomRepository roomRepository;
     private final StudentRepository studentRepository;
@@ -88,8 +87,11 @@ public class TeacherService {
         List<Enrollment> enrollments = enrollmentRepository.findAllByRoom(room);
         List<DashboardDtos.StudentStatus> dashboardList = new ArrayList<>();
 
-        // 기준 시간: 현재로부터 5분 전
-        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        // 1. DB 조회용 범위 (최근 1분 데이터 가져오기 - 넉넉하게)
+        LocalDateTime fetchRange = LocalDateTime.now().minusMinutes(1);
+
+        // 2. ★ [핵심] "자리비움" 판단 기준 시간 (현재로부터 10초 전)
+        LocalDateTime tenSecondsAgo = LocalDateTime.now().minusSeconds(10);
 
         for (Enrollment enrollment : enrollments) {
             Student student = enrollment.getStudent();
@@ -98,11 +100,11 @@ public class TeacherService {
             boolean isPresent = attendanceRepository.existsByRoomAndStudentAndAttendanceDate(
                     room, student, LocalDate.now());
 
-            // 2. (if로 했는데 안되서 일단 이렇게) 출석 여부(isPresent)와 상관없이 일단 로그를 다 가져와!
+            // 최근 로그 가져오기
             List<ConcentrationLog> recentLogs = concentrationLogRepository
-                    .findAllByRoomAndStudentAndTimestampAfter(room, student, fiveMinutesAgo);
+                    .findAllByRoomAndStudentAndTimestampAfter(room, student, fetchRange);
 
-            // 가장 최신 로그 점수 확인
+            // 가장 최신 로그 가져오기
             ConcentrationLog lastLog = recentLogs.isEmpty() ? null : recentLogs.get(recentLogs.size() - 1);
             Double currentScore = (lastLog != null) ? lastLog.getScore() : 0.0;
 
@@ -110,15 +112,17 @@ public class TeacherService {
             String message = "미출석";
 
             if (isPresent) {
-                if (recentLogs.isEmpty()) {
-                    // 출석은 했는데 최근 5분간 로그가 없음 -> "자리비움" (얼굴 인식 실패)
-                    message = "자리비움";
+                // ★ [핵심 로직 수정]
+                // 로그가 아예 없거나 OR 마지막 로그 시간이 10초보다 더 이전이라면 -> "자리비움"
+                boolean isLogOld = (lastLog == null) || lastLog.getTimestamp().isBefore(tenSecondsAgo);
+
+                if (isLogOld) {
+                    message = "자리비움"; // 10초간 데이터 끊김
                 } else {
-                    // 로그가 있는 경우 (정상 감지 중)
-                    // 점수가 0점인 데이터가 들어온 경우도 처리 (눈 감음, 고개 돌림 등)
+                    // 10초 이내에 데이터가 들어온 경우 (연결됨)
                     boolean isLookingAway = recentLogs.stream().anyMatch(log -> log.getScore() == 0.0);
 
-                    if (isLookingAway && currentScore == 0.0) message = "자세 불량"; // 혹은 "딴짓 중"
+                    if (isLookingAway && currentScore == 0.0) message = "자세 불량";
                     else if (currentScore < 0.4) message = "집중력 저하";
                     else message = "집중 중";
                 }
@@ -128,7 +132,7 @@ public class TeacherService {
                     .studentId(student.getId())
                     .name(student.getName())
                     .studentNumber(student.getStudentNumber())
-                    .isPresent(isPresent) // 로그가 있으면 true로 바뀜
+                    .isPresent(isPresent)
                     .currentScore(currentScore)
                     .statusMessage(message)
                     .build());
@@ -143,12 +147,12 @@ public class TeacherService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("방 없음"));
         Student student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new IllegalArgumentException("학생 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("학생 없음"));
 
-        // 전체 로그 가져오기
+        // 전체 로그 가져오기 (시간 순서대로 정렬되어 있음)
         List<ConcentrationLog> logs = concentrationLogRepository.findAllByRoomAndStudentOrderByTimestampAsc(room, student);
 
-        // 그래프용 데이터로 변환 (시간, 점수)
+        // 그래프용 데이터로 변환 (전체 이력)
         List<Map<String, Object>> historyList = logs.stream().map(log -> {
             Map<String, Object> data = new HashMap<>();
             data.put("time", log.getTimestamp());
@@ -156,22 +160,22 @@ public class TeacherService {
             return data;
         }).collect(Collectors.toList());
 
-        // 최근 30초(또는 최근 10개) 평균 점수 계산
-        // (데이터가 없으면 0.0)
-        double recentAvg = logs.stream()
-                    .skip(Math.max(0, logs.size() - 10)) // 끝에서 10개만 남김
-                    .mapToDouble(ConcentrationLog::getScore)
-                    .average()
-                    .orElse(0.0);
+        // 가장 최신 값(Raw Value) 사용
+        double latestScore = 0.0;
 
-        // 3. 소수점 둘째 자리까지 반올림 (예: 0.8555 -> 0.86)
-        // 기존 코드(recentAvg / 10.0)는 삭제하고, 정확한 반올림 로직 적용
-        double roundedAvg = Math.round(recentAvg * 100) / 100.0;
+        if (!logs.isEmpty()) {
+            // logs는 시간 오름차순(Asc)이므로, 맨 마지막 요소가 가장 최신 데이터입니다.
+            latestScore = logs.get(logs.size() - 1).getScore();
+        }
 
         // 결과 맵핑
         Map<String, Object> response = new HashMap<>();
         response.put("studentName", student.getName());
-        response.put("recentAverage", roundedAvg);
+
+        // 프론트엔드 코드 수정을 최소화하기 위해 키 이름('recentAverage')은 유지하되,
+        // 실제 값은 '가장 최신 점수'를 넣어줍니다.
+        response.put("recentAverage", latestScore);
+
         response.put("history", historyList);
 
         return response;

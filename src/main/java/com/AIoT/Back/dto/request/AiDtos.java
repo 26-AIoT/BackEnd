@@ -12,4 +12,6 @@ import java.util.List;
 public class AiDtos {
     // AI가 보낸 512차원 벡터 데이터
     private List<Double> vector;
+
+    private String device;
 }
